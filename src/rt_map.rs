@@ -1,0 +1,303 @@
+use std::{borrow::Borrow, collections::HashMap, fmt, hash::Hash, marker::PhantomData};
+
+use crate::{Cell, Entry, Ref, RefMut};
+
+/// Map from `TypeId` to type.
+pub struct RtMap<K, V>(HashMap<K, Cell<V>>);
+
+impl<K, V> Default for RtMap<K, V> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
+macro_rules! fetch_panic {
+    ($key:ident) => {
+        panic!(
+            "\
+            Tried to fetch value from the map, but the value does not exist.\n\
+            \n\
+            Key: `{key:?}`
+            ",
+            key = $key,
+        )
+    };
+}
+
+/// A [Resource] container, which provides methods to insert, access and manage
+/// the contained rt_map.
+///
+/// Many methods take `&self` which works because everything
+/// is stored with **interior mutability**. In case you violate
+/// the borrowing rules of Rust (multiple reads xor one write),
+/// you will get a panic.
+///
+/// # Resource Ids
+///
+/// RtMap are identified by `TypeId`s, which consist of a `TypeId`.
+impl<K, V> RtMap<K, V>
+where
+    K: Hash + Eq,
+{
+    /// Creates an empty `RtMap`.
+    ///
+    /// The map is initially created with a capacity of 0, so it will not
+    /// allocate until it is first inserted into.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rt_map::RtMap;
+    /// let mut map = RtMap::new();
+    /// ```
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Returns an entry for the resource with type `R`.
+    pub fn entry(&mut self, k: K) -> Entry<'_, K, V> {
+        Entry::new(self.0.entry(k))
+    }
+
+    /// Inserts a resource into this container.
+    ///
+    /// If the map did not have this key present, `None` is returned.
+    ///
+    /// If the map did have this key present, the value is updated, and the old
+    /// value is returned. The key is not updated, though; this matters for
+    /// types that can be `==` without being identical.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rt_map::RtMap;
+    ///
+    /// let mut map = RtMap::new();
+    /// assert_eq!(map.insert(37, "a"), None);
+    /// assert_eq!(map.is_empty(), false);
+    ///
+    /// map.insert(37, "b");
+    /// assert_eq!(map.insert(37, "c"), Some("b"));
+    /// assert_eq!(map[&37], "c");
+    /// ```
+    pub fn insert(&mut self, k: K, v: V) -> Option<V> {
+        self.0.insert(k, Cell::new(v)).map(Cell::into_inner)
+    }
+
+    /// Removes a key from the map, returning the value at the key if the key
+    /// was previously in the map.
+    ///
+    /// The key may be any borrowed form of the map’s key type, but `Hash` and
+    /// `Eq` on the borrowed form must match those for the key type.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rt_map::RtMap;
+    ///
+    /// let mut map = RtMap::new();
+    /// map.insert(1, "a");
+    /// assert_eq!(map.remove(&1), Some("a"));
+    /// assert_eq!(map.remove(&1), None);
+    /// ```
+    pub fn remove<Q>(&mut self, k: &Q) -> Option<V>
+    where
+        Q: ?Sized + Hash + Eq,
+        K: Borrow<Q>,
+    {
+        self.0.remove(k).map(Cell::into_inner)
+    }
+
+    /// Returns true if the specified resource type `R` exists in `self`.
+    pub fn contains_key<Q>(&self, k: &Q) -> bool
+    where
+        Q: ?Sized + Hash + Eq,
+        K: Borrow<Q>,
+    {
+        self.0.contains_key(k)
+    }
+
+    /// Returns the `R` resource in the resource map.
+    ///
+    /// See [`try_borrow`] for a non-panicking version of this function.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the resource doesn't exist.
+    /// Panics if the resource is being accessed mutably.
+    ///
+    /// [`try_borrow`]: Self::try_borrow
+    pub fn borrow<Q>(&self, k: &Q) -> Ref<V>
+    where
+        Q: ?Sized + Hash + Eq + fmt::Debug,
+        K: Borrow<Q>,
+    {
+        self.0
+            .get(k)
+            .map(|cell| Ref {
+                inner: cell.borrow(),
+                phantom: PhantomData,
+            })
+            .unwrap_or_else(|| fetch_panic!(k))
+    }
+
+    /// Returns an immutable reference to `R` if it exists, `None` otherwise.
+    pub fn try_borrow<Q>(&self, k: &Q) -> Option<Ref<V>>
+    where
+        Q: ?Sized + Hash + Eq,
+        K: Borrow<Q>,
+    {
+        self.0.get(k).and_then(|cell| {
+            cell.try_borrow().map(|cell_ref| Ref {
+                inner: cell_ref,
+                phantom: PhantomData,
+            })
+        })
+    }
+
+    /// Returns a mutable reference to `R` if it exists, `None` otherwise.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the resource doesn't exist.
+    /// Panics if the resource is already accessed.
+    pub fn borrow_mut<Q>(&self, k: &Q) -> RefMut<V>
+    where
+        Q: ?Sized + Hash + Eq + fmt::Debug,
+        K: Borrow<Q>,
+    {
+        self.0
+            .get(k)
+            .map(|cell| RefMut {
+                inner: cell.borrow_mut(),
+                phantom: PhantomData,
+            })
+            .unwrap_or_else(|| fetch_panic!(k))
+    }
+
+    /// Returns a mutable reference to `R` if it exists, `None` otherwise.
+    pub fn try_borrow_mut<Q>(&self, k: &Q) -> Option<RefMut<V>>
+    where
+        Q: ?Sized + Hash + Eq,
+        K: Borrow<Q>,
+    {
+        self.0.get(k).and_then(|r_cell| {
+            r_cell.try_borrow_mut().map(|cell_ref_mut| RefMut {
+                inner: cell_ref_mut,
+                phantom: PhantomData,
+            })
+        })
+    }
+
+    /// Retrieves a resource without fetching, which is cheaper, but only
+    /// available with `&mut self`.
+    pub fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut V>
+    where
+        Q: ?Sized + Hash + Eq,
+        K: Borrow<Q>,
+    {
+        self.get_resource_mut(k)
+    }
+
+    /// Retrieves a resource without fetching, which is cheaper, but only
+    /// available with `&mut self`.
+    pub fn get_resource_mut<Q>(&mut self, k: &Q) -> Option<&mut V>
+    where
+        Q: ?Sized + Hash + Eq,
+        K: Borrow<Q>,
+    {
+        self.0.get_mut(k).map(Cell::get_mut)
+    }
+
+    /// Get raw access to the underlying cell.
+    pub fn get_raw<Q>(&self, k: &Q) -> Option<&Cell<V>>
+    where
+        Q: ?Sized + Hash + Eq,
+        K: Borrow<Q>,
+    {
+        self.0.get(k)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RtMap;
+
+    #[derive(Debug, Default, PartialEq)]
+    struct Res;
+
+    #[test]
+    fn insert() {
+        let mut rt_map = RtMap::new();
+        rt_map.insert('a', Res);
+
+        assert!(rt_map.contains_key(&'a'));
+        assert!(!rt_map.contains_key(&'b'));
+    }
+
+    #[test]
+    #[should_panic(expected = "but it was already borrowed")]
+    fn read_write_fails() {
+        let mut rt_map = RtMap::new();
+        rt_map.insert('a', Res);
+
+        let _read = rt_map.borrow(&'a');
+        let _write = rt_map.borrow_mut(&'a');
+    }
+
+    #[test]
+    #[should_panic(expected = "but it was already borrowed mutably")]
+    fn write_read_fails() {
+        let mut rt_map = RtMap::new();
+        rt_map.insert('a', Res);
+
+        let _write = rt_map.borrow_mut(&'a');
+        let _read = rt_map.borrow(&'a');
+    }
+
+    #[test]
+    fn remove_insert() {
+        let mut rt_map = RtMap::new();
+        rt_map.insert('a', Res);
+
+        assert!(rt_map.contains_key(&'a'));
+
+        rt_map.remove(&'a').unwrap();
+
+        assert!(!rt_map.contains_key(&'a'));
+
+        rt_map.insert('a', Res);
+
+        assert!(rt_map.contains_key(&'a'));
+    }
+
+    #[test]
+    fn borrow_mut_try_borrow_returns_none() {
+        let mut rt_map = RtMap::new();
+        rt_map.insert('a', Res);
+
+        let _res = rt_map.borrow_mut(&'a');
+
+        assert_eq!(None, rt_map.try_borrow(&'a'));
+    }
+
+    #[test]
+    fn borrow_try_borrow_mut_returns_none() {
+        let mut rt_map = RtMap::new();
+        rt_map.insert('a', Res);
+
+        let _res = rt_map.borrow(&'a');
+
+        assert_eq!(None, rt_map.try_borrow_mut(&'a'));
+    }
+
+    #[test]
+    fn borrow_mut_borrow_mut_returns_none() {
+        let mut rt_map = RtMap::new();
+        rt_map.insert('a', Res);
+
+        let _res = rt_map.borrow_mut(&'a');
+
+        assert_eq!(None, rt_map.try_borrow_mut(&'a'));
+    }
+}
