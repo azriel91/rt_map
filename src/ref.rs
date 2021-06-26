@@ -57,3 +57,80 @@ impl<'a, V> Clone for Ref<'a, V> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        fmt::{self, Write},
+        sync::atomic::{AtomicUsize, Ordering},
+    };
+
+    use crate::CellRef;
+
+    use super::Ref;
+
+    #[test]
+    fn debug_includes_inner_field() -> fmt::Result {
+        let flag = AtomicUsize::new(0);
+        let value = A(1);
+        let r#ref = Ref::new(CellRef {
+            flag: &flag,
+            value: &value,
+        });
+
+        let mut debug_string = String::with_capacity(64);
+        write!(&mut debug_string, "{:?}", r#ref)?;
+        assert_eq!("Ref { inner: A(1) }", debug_string.as_str());
+
+        Ok(())
+    }
+
+    #[test]
+    fn partial_eq_compares_value() -> fmt::Result {
+        let flag = AtomicUsize::new(0);
+        let value = A(1);
+        let r#ref = Ref::new(CellRef {
+            flag: &flag,
+            value: &value,
+        });
+
+        assert_eq!(
+            Ref::new(CellRef {
+                flag: &flag,
+                value: &value,
+            }),
+            r#ref
+        );
+        assert_ne!(
+            Ref::new(CellRef {
+                flag: &flag,
+                value: &A(2),
+            }),
+            r#ref
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn clone_increments_cell_ref_count() -> fmt::Result {
+        let flag = AtomicUsize::new(1);
+        let value = A(1);
+        let ref_0 = Ref::new(CellRef {
+            flag: &flag,
+            value: &value,
+        });
+
+        assert_eq!(1, ref_0.inner.flag.load(Ordering::SeqCst));
+
+        let ref_1 = ref_0.clone();
+
+        assert_eq!(2, ref_0.inner.flag.load(Ordering::SeqCst));
+        assert_eq!(2, ref_1.inner.flag.load(Ordering::SeqCst));
+
+        Ok(())
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    struct A(usize);
+}
