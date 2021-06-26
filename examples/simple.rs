@@ -20,7 +20,7 @@ fn main() {
     drop(a);
     drop(b);
 
-    // Multiple immutable borrows to the same resource are valid.
+    // Multiple immutable borrows to the same value are valid.
     let a_0 = rt_map.borrow(&'a');
     let _a_1 = rt_map.borrow(&'a');
     let b = rt_map.borrow(&'b');
@@ -28,7 +28,7 @@ fn main() {
     println!("A: {}", a_0.0);
     println!("B: {}", b.0);
 
-    // Trying to mutably borrow a resource that is already borrowed (immutably
+    // Trying to mutably borrow a value that is already borrowed (immutably
     // or mutably) returns `None`.
     let a_try_borrow_mut = rt_map.try_borrow_mut(&'a');
     let exists = if a_try_borrow_mut.is_some() {

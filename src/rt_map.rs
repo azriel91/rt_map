@@ -24,17 +24,20 @@ macro_rules! fetch_panic {
     };
 }
 
-/// A [Resource] container, which provides methods to insert, access and manage
-/// the contained rt_map.
+/// A [`HashMap`] that allows multiple mutable borrows to different entries.
 ///
-/// Many methods take `&self` which works because everything
-/// is stored with **interior mutability**. In case you violate
-/// the borrowing rules of Rust (multiple reads xor one write),
-/// you will get a panic.
+/// The [`borrow`] and [`borrow_mut`] methods take `&self`, allowing multiple
+/// mutable borrows of different entries at the same time. This is achieved via
+/// interior mutability. In case you violate the borrowing rules of Rust
+/// (multiple reads xor one write), you will get a panic.
 ///
-/// # Resource Ids
+/// For non-packing versions of these methods, use [`try_borrow`] and
+/// [`try_borrow_mut`].
 ///
-/// RtMap are identified by `TypeId`s, which consist of a `TypeId`.
+/// [`borrow`]: Self::borrow
+/// [`borrow_mut`]: Self::borrow_mut
+/// [`try_borrow`]: Self::try_borrow
+/// [`try_borrow_mut`]: Self::try_borrow_mut
 impl<K, V> RtMap<K, V>
 where
     K: Hash + Eq,
@@ -48,20 +51,21 @@ where
     ///
     /// ```rust
     /// use rt_map::RtMap;
-    /// let mut map = RtMap::new();
+    /// let mut map = RtMap::<u32, String>::new();
     /// ```
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Returns an entry for the resource with type `R`.
+    /// Gets the given key’s corresponding entry in the map for in-place
+    /// manipulation.
     pub fn entry(&mut self, k: K) -> Entry<'_, K, V> {
         Entry::new(self.0.entry(k))
     }
 
-    /// Inserts a resource into this container.
+    /// Inserts a key-value pair into the map.
     ///
-    /// If the map did not have this key present, `None` is returned.
+    /// If the map did not have this key present, [`None`] is returned.
     ///
     /// If the map did have this key present, the value is updated, and the old
     /// value is returned. The key is not updated, though; this matters for
@@ -78,10 +82,26 @@ where
     ///
     /// map.insert(37, "b");
     /// assert_eq!(map.insert(37, "c"), Some("b"));
-    /// assert_eq!(map[&37], "c");
+    /// assert_eq!(*map.borrow(&37), "c");
     /// ```
     pub fn insert(&mut self, k: K, v: V) -> Option<V> {
         self.0.insert(k, Cell::new(v)).map(Cell::into_inner)
+    }
+
+    /// Returns `true` if the map contains no elements.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rt_map::RtMap;
+    ///
+    /// let mut a = RtMap::new();
+    /// assert!(a.is_empty());
+    /// a.insert(1, "a");
+    /// assert!(!a.is_empty());
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     /// Removes a key from the map, returning the value at the key if the key
@@ -108,7 +128,10 @@ where
         self.0.remove(k).map(Cell::into_inner)
     }
 
-    /// Returns true if the specified resource type `R` exists in `self`.
+    /// Returns `true` if the map contains a value for the specified key.
+    ///
+    /// The key may be any borrowed form of the map’s key type, but [`Hash`] and
+    /// [`Eq`] on the borrowed form must match those for the key type.
     pub fn contains_key<Q>(&self, k: &Q) -> bool
     where
         Q: ?Sized + Hash + Eq,
@@ -117,14 +140,17 @@ where
         self.0.contains_key(k)
     }
 
-    /// Returns the `R` resource in the resource map.
+    /// Returns a reference to the value corresponding to the key.
+    ///
+    /// The key may be any borrowed form of the map’s key type, but [`Hash`] and
+    /// [`Eq`] on the borrowed form must match those for the key type.
     ///
     /// See [`try_borrow`] for a non-panicking version of this function.
     ///
     /// # Panics
     ///
-    /// Panics if the resource doesn't exist.
-    /// Panics if the resource is being accessed mutably.
+    /// * Panics if the resource doesn't exist.
+    /// * Panics if the resource is being accessed mutably.
     ///
     /// [`try_borrow`]: Self::try_borrow
     pub fn borrow<Q>(&self, k: &Q) -> Ref<V>
@@ -141,7 +167,8 @@ where
             .unwrap_or_else(|| fetch_panic!(k))
     }
 
-    /// Returns an immutable reference to `R` if it exists, `None` otherwise.
+    /// Returns a reference to the value if it exists and is not mutably
+    /// borrowed, `None` otherwise.
     pub fn try_borrow<Q>(&self, k: &Q) -> Option<Ref<V>>
     where
         Q: ?Sized + Hash + Eq,
@@ -155,12 +182,13 @@ where
         })
     }
 
-    /// Returns a mutable reference to `R` if it exists, `None` otherwise.
+    /// Returns a reference to the value if it exists and is not borrowed,
+    /// `None` otherwise.
     ///
     /// # Panics
     ///
-    /// Panics if the resource doesn't exist.
-    /// Panics if the resource is already accessed.
+    /// * Panics if the resource doesn't exist.
+    /// * Panics if the resource is already accessed.
     pub fn borrow_mut<Q>(&self, k: &Q) -> RefMut<V>
     where
         Q: ?Sized + Hash + Eq + fmt::Debug,

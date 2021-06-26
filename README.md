@@ -4,11 +4,11 @@
 ![CI](https://github.com/azriel91/rt_map/workflows/CI/badge.svg)
 [![Coverage Status](https://codecov.io/gh/azriel91/rt_map/branch/main/graph/badge.svg)](https://codecov.io/gh/azriel91/rt_map)
 
-Runtime managed borrowing.
+Runtime managed mutable borrowing from a map.
 
 This library provides a map that allows mutable borrows to different entries at the same time.
 
-This implementation is learnt from [`shred`].
+This implementation is extracted and slightly modified from [`shred`].
 
 ## Usage
 
@@ -24,17 +24,16 @@ In code:
 use rt_map::RtMap;
 
 struct A(u32);
-struct B(u32);
 
 fn main() {
     let mut rt_map = RtMap::new();
 
-    rt_map.insert(A(1));
-    rt_map.insert(B(2));
+    rt_map.insert('a', A(1));
+    rt_map.insert('b', A(2));
 
     // We can validly have two mutable borrows from the `RtMap` map!
-    let mut a = rt_map.borrow_mut::<A>();
-    let mut b = rt_map.borrow_mut::<B>();
+    let mut a = rt_map.borrow_mut(&'a');
+    let mut b = rt_map.borrow_mut(&'b');
     a.0 = 2;
     b.0 = 3;
 
@@ -44,17 +43,17 @@ fn main() {
     drop(a);
     drop(b);
 
-    // Multiple immutable borrows to the same resource are valid.
-    let a_0 = rt_map.borrow::<A>();
-    let _a_1 = rt_map.borrow::<A>();
-    let b = rt_map.borrow::<B>();
+    // Multiple immutable borrows to the same value are valid.
+    let a_0 = rt_map.borrow(&'a');
+    let _a_1 = rt_map.borrow(&'a');
+    let b = rt_map.borrow(&'b');
 
     println!("A: {}", a_0.0);
     println!("B: {}", b.0);
 
-    // Trying to mutably borrow a resource that is already borrowed (immutably
+    // Trying to mutably borrow a value that is already borrowed (immutably
     // or mutably) returns `None`.
-    let a_try_borrow_mut = rt_map.try_borrow_mut::<A>();
+    let a_try_borrow_mut = rt_map.try_borrow_mut(&'a');
     let exists = if a_try_borrow_mut.is_some() {
         "Some(..)"
     } else {
