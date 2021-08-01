@@ -3,6 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/rt_map.svg)](https://crates.io/crates/rt_map)
 ![CI](https://github.com/azriel91/rt_map/workflows/CI/badge.svg)
 [![Coverage Status](https://codecov.io/gh/azriel91/rt_map/branch/main/graph/badge.svg)](https://codecov.io/gh/azriel91/rt_map)
+[![docs.rs](https://docs.rs/rt_map/badge.svg)](https://docs.rs/rt_map/)
 
 Runtime managed mutable borrowing from a map.
 
