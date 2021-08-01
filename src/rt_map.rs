@@ -3,6 +3,7 @@ use std::{borrow::Borrow, collections::HashMap, fmt, hash::Hash, marker::Phantom
 use crate::{Cell, Entry, Ref, RefMut};
 
 /// Map from `TypeId` to type.
+#[derive(Debug)]
 pub struct RtMap<K, V>(HashMap<K, Cell<V>>);
 
 impl<K, V> Default for RtMap<K, V> {
