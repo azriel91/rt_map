@@ -16,7 +16,7 @@ This implementation is extracted and slightly modified from [`shred`].
 Add the following to `Cargo.toml`
 
 ```toml
-rt_map = "0.1.0"
+rt_map = "0.2.0"
 ```
 
 In code:
