@@ -57,6 +57,37 @@ where
         Self::default()
     }
 
+    /// Creates an empty `RtMap` with the specified capacity.
+    ///
+    /// The map will be able to hold at least capacity elements without
+    /// reallocating. If capacity is 0, the map will not allocate.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rt_map::RtMap;
+    /// let map: RtMap<&str, i32> = RtMap::with_capacity(10);
+    /// ```
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashMap::with_capacity(capacity))
+    }
+
+    /// Returns the number of elements the map can hold without reallocating.
+    ///
+    /// This number is a lower bound; the `RtMap<K, V>` might be able to hold
+    /// more, but is guaranteed to be able to hold at least this many.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use rt_map::RtMap;
+    /// let map: RtMap<i32, i32> = RtMap::with_capacity(100);
+    /// assert!(map.capacity() >= 100);
+    /// ```
+    pub fn capacity(&self) -> usize {
+        self.0.capacity()
+    }
+
     /// Gets the given key’s corresponding entry in the map for in-place
     /// manipulation.
     pub fn entry(&mut self, k: K) -> Entry<'_, K, V> {
@@ -261,6 +292,12 @@ mod tests {
 
         assert!(rt_map.contains_key(&'a'));
         assert!(!rt_map.contains_key(&'b'));
+    }
+
+    #[test]
+    fn with_capacity_reserves_enough_capacity() {
+        let map: RtMap<i32, i32> = RtMap::with_capacity(100);
+        assert!(map.capacity() >= 100);
     }
 
     #[test]
