@@ -10,7 +10,7 @@
 //! Add the following to `Cargo.toml`
 //!
 //! ```toml
-//! rt_map = "0.3.0"
+//! rt_map = "0.4.0"
 //! ```
 //!
 //! In code:
