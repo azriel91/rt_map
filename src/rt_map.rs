@@ -307,6 +307,9 @@ mod tests {
     #[derive(Debug, Default, PartialEq)]
     struct Res;
 
+    #[derive(Debug, Default, PartialEq)]
+    struct Value(u32);
+
     #[test]
     fn insert() {
         let mut rt_map = RtMap::new();
@@ -335,6 +338,62 @@ mod tests {
 
         let b = rt_map.iter().next();
         assert_eq!(Some(2), b.map(|(_k, v)| *v.borrow()));
+    }
+
+    #[test]
+    fn is_empty_returns_true_when_map_does_not_contain_items() {
+        let rt_map = RtMap::<char, u32>::new();
+
+        assert!(rt_map.is_empty());
+    }
+
+    #[test]
+    fn is_empty_returns_false_when_map_contains_items() {
+        let mut rt_map = RtMap::new();
+
+        rt_map.insert('a', 0);
+
+        assert!(!rt_map.is_empty());
+    }
+
+    #[test]
+    fn entry_insert_value() {
+        let mut rt_map = RtMap::new();
+
+        let ref_mut = rt_map.entry('a').or_insert(1);
+
+        assert_eq!(1, *ref_mut);
+        drop(ref_mut);
+
+        let ref_mut = rt_map.entry('a').or_insert(2);
+
+        assert_eq!(1, *ref_mut);
+        drop(ref_mut);
+
+        rt_map.remove(&'a');
+
+        let ref_mut = rt_map.entry('a').or_insert_with(|| 3);
+
+        assert_eq!(3, *ref_mut);
+        drop(ref_mut);
+    }
+
+    #[test]
+    fn get_mut_returns_mutable_reference_to_value() {
+        let mut rt_map = RtMap::new();
+        rt_map.insert('a', Value(1));
+
+        let value = rt_map.get_mut(&'a');
+
+        assert!(value.is_some());
+
+        if let Some(value) = value {
+            *value = Value(2);
+        }
+
+        let value = rt_map.get_mut(&'a').map(|value| value.0);
+
+        assert_eq!(Some(2), value);
     }
 
     #[test]

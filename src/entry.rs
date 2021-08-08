@@ -1,5 +1,6 @@
 use crate::{Cell, RefMut};
 
+#[derive(Debug)]
 pub struct Entry<'a, K, V> {
     inner: Inner<'a, K, V>,
 }
