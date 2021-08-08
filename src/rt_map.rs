@@ -1,4 +1,11 @@
-use std::{borrow::Borrow, collections::HashMap, fmt, hash::Hash, marker::PhantomData};
+use std::{
+    borrow::Borrow,
+    collections::HashMap,
+    fmt,
+    hash::Hash,
+    marker::PhantomData,
+    ops::{Deref, DerefMut},
+};
 
 use crate::{Cell, Entry, Ref, RefMut};
 
@@ -279,6 +286,20 @@ where
     }
 }
 
+impl<K, V> Deref for RtMap<K, V> {
+    type Target = HashMap<K, Cell<V>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<K, V> DerefMut for RtMap<K, V> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::RtMap;
@@ -299,6 +320,21 @@ mod tests {
     fn with_capacity_reserves_enough_capacity() {
         let map: RtMap<i32, i32> = RtMap::with_capacity(100);
         assert!(map.capacity() >= 100);
+    }
+
+    #[test]
+    fn deref_and_deref_mut() {
+        let mut rt_map = RtMap::new();
+        rt_map.insert('a', 0);
+        rt_map.insert('b', 1);
+
+        rt_map.iter_mut().for_each(|(_k, v)| *v.borrow_mut() += 1);
+
+        let a = rt_map.remove(&'a');
+        assert_eq!(Some(1), a);
+
+        let b = rt_map.iter().next();
+        assert_eq!(Some(2), b.map(|(_k, v)| *v.borrow()));
     }
 
     #[test]
