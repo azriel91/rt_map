@@ -3,14 +3,15 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::{CellRef, CellRefMut};
+use crate::{BorrowFail, CellRef, CellRefMut};
 
 macro_rules! borrow_panic {
-    ($s:expr) => {{
+    ($borrow_wanted:expr, $borrow_existing:expr) => {{
         panic!(
-            "Tried to fetch data of type {:?}, but it was already borrowed{}.",
-            ::std::any::type_name::<T>(),
-            $s,
+            "Expected to borrow `{type_name}` {borrow_wanted}, but it was already borrowed{borrow_existing}.",
+            type_name = ::std::any::type_name::<T>(),
+            borrow_wanted = $borrow_wanted,
+            borrow_existing = $borrow_existing,
         )
     }};
 }
@@ -46,7 +47,7 @@ impl<T> Cell<T> {
     /// already in use.
     pub fn borrow(&self) -> CellRef<T> {
         if !self.check_flag_read() {
-            borrow_panic!(" mutably");
+            borrow_panic!("immutably", " mutably");
         }
 
         CellRef {
@@ -59,14 +60,14 @@ impl<T> Cell<T> {
     ///
     /// Absence of write accesses is checked at run-time. If access is not
     /// possible, `None` is returned.
-    pub fn try_borrow(&self) -> Option<CellRef<T>> {
+    pub fn try_borrow(&self) -> Result<CellRef<T>, BorrowFail> {
         if self.check_flag_read() {
-            Some(CellRef {
+            Ok(CellRef {
                 flag: &self.flag,
                 value: unsafe { &*self.inner.get() },
             })
         } else {
-            None
+            Err(BorrowFail::BorrowConflictImm)
         }
     }
 
@@ -80,7 +81,7 @@ impl<T> Cell<T> {
     /// in use.
     pub fn borrow_mut(&self) -> CellRefMut<T> {
         if !self.check_flag_write() {
-            borrow_panic!("");
+            borrow_panic!("mutably", "");
         }
 
         CellRefMut {
@@ -93,14 +94,14 @@ impl<T> Cell<T> {
     ///
     /// Exclusive access is checked at run-time. If access is not possible,
     /// `None` is returned.
-    pub fn try_borrow_mut(&self) -> Option<CellRefMut<T>> {
+    pub fn try_borrow_mut(&self) -> Result<CellRefMut<T>, BorrowFail> {
         if self.check_flag_write() {
-            Some(CellRefMut {
+            Ok(CellRefMut {
                 flag: &self.flag,
                 value: unsafe { &mut *self.inner.get() },
             })
         } else {
-            None
+            Err(BorrowFail::BorrowConflictMut)
         }
     }
 
@@ -147,7 +148,7 @@ mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     use super::Cell;
-    use crate::{CellRef, CellRefMut};
+    use crate::{BorrowFail, CellRef, CellRefMut};
 
     #[test]
     fn allow_multiple_reads() {
@@ -183,7 +184,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "but it was already borrowed mutably")]
+    #[should_panic(
+        expected = "Expected to borrow `i32` immutably, but it was already borrowed mutably."
+    )]
     fn panic_write_and_read() {
         let cell = Cell::new(5);
 
@@ -194,7 +197,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "but it was already borrowed")]
+    #[should_panic(expected = "Expected to borrow `i32` mutably, but it was already borrowed.")]
     fn panic_write_and_write() {
         let cell = Cell::new(5);
 
@@ -205,7 +208,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Tried to fetch data of type \"i32\", but it was already borrowed.")]
+    #[should_panic(expected = "Expected to borrow `i32` mutably, but it was already borrowed.")]
     fn panic_read_and_write() {
         let cell = Cell::new(5);
 
@@ -221,7 +224,10 @@ mod tests {
         let mut a = cell.try_borrow_mut().unwrap();
         *a = 7;
 
-        assert!(cell.try_borrow().is_none());
+        assert_eq!(
+            BorrowFail::BorrowConflictImm,
+            cell.try_borrow().unwrap_err()
+        );
 
         *a = 8;
     }
@@ -233,7 +239,10 @@ mod tests {
         let mut a = cell.try_borrow_mut().unwrap();
         *a = 7;
 
-        assert!(cell.try_borrow_mut().is_none());
+        assert_eq!(
+            BorrowFail::BorrowConflictMut,
+            cell.try_borrow_mut().unwrap_err()
+        );
 
         *a = 8;
     }
@@ -244,7 +253,10 @@ mod tests {
 
         let _a = cell.try_borrow().unwrap();
 
-        assert!(cell.try_borrow_mut().is_none());
+        assert_eq!(
+            BorrowFail::BorrowConflictMut,
+            cell.try_borrow_mut().unwrap_err()
+        );
     }
 
     #[test]
@@ -256,7 +268,10 @@ mod tests {
 
         drop(a);
 
-        assert!(cell.try_borrow_mut().is_none());
+        assert_eq!(
+            BorrowFail::BorrowConflictMut,
+            cell.try_borrow_mut().unwrap_err()
+        );
         assert_eq!(5, *b);
     }
 
@@ -384,7 +399,7 @@ mod tests {
 
     #[test]
     #[should_panic(
-        expected = "Tried to fetch data of type \"alloc::boxed::Box<usize>\", but it was already borrowed."
+        expected = "Expected to borrow `alloc::boxed::Box<usize>` mutably, but it was already borrowed."
     )]
     fn ref_mut_map_retains_mut_borrow() {
         let cell = Cell::new(Box::new(10));

@@ -46,14 +46,14 @@
 //! println!("B: {}", b.0);
 //!
 //! // Trying to mutably borrow a value that is already borrowed (immutably
-//! // or mutably) returns `None`.
+//! // or mutably) returns `Err`.
 //! let a_try_borrow_mut = rt_map.try_borrow_mut(&'a');
-//! let exists = if a_try_borrow_mut.is_some() {
-//!     "Some(..)"
+//! let exists = if a_try_borrow_mut.is_ok() {
+//!     "Ok(..)"
 //! } else {
-//!     "None"
+//!     "Err"
 //! };
-//! println!("a_try_borrow_mut: {}", exists); // prints "None"
+//! println!("a_try_borrow_mut: {}", exists); // prints "Err"
 //! ```
 //!
 //! ## See Also
@@ -67,10 +67,11 @@
 //! [`shred`]: https://github.com/amethyst/shred
 
 pub use crate::{
-    cell::Cell, cell_ref::CellRef, cell_ref_mut::CellRefMut, entry::Entry, r#ref::Ref,
-    ref_mut::RefMut, rt_map::RtMap,
+    borrow_fail::BorrowFail, cell::Cell, cell_ref::CellRef, cell_ref_mut::CellRefMut, entry::Entry,
+    r#ref::Ref, ref_mut::RefMut, rt_map::RtMap,
 };
 
+mod borrow_fail;
 mod cell;
 mod cell_ref;
 mod cell_ref_mut;

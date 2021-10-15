@@ -1,9 +1,9 @@
 # 🗃️ rt_map
 
 [![Crates.io](https://img.shields.io/crates/v/rt_map.svg)](https://crates.io/crates/rt_map)
-![CI](https://github.com/azriel91/rt_map/workflows/CI/badge.svg)
+[![docs.rs](https://img.shields.io/docsrs/rt_map)](https://docs.rs/rt_map)
+[![CI](https://github.com/azriel91/rt_map/workflows/CI/badge.svg)](https://github.com/azriel91/rt_map/actions/workflows/ci.yml)
 [![Coverage Status](https://codecov.io/gh/azriel91/rt_map/branch/main/graph/badge.svg)](https://codecov.io/gh/azriel91/rt_map)
-[![docs.rs](https://docs.rs/rt_map/badge.svg)](https://docs.rs/rt_map/)
 
 Runtime managed mutable borrowing from a map.
 
@@ -53,14 +53,14 @@ fn main() {
     println!("B: {}", b.0);
 
     // Trying to mutably borrow a value that is already borrowed (immutably
-    // or mutably) returns `None`.
+    // or mutably) returns `Err`.
     let a_try_borrow_mut = rt_map.try_borrow_mut(&'a');
     let exists = if a_try_borrow_mut.is_some() {
-        "Some(..)"
+        "Ok(..)"
     } else {
-        "None"
+        "Err"
     };
-    println!("a_try_borrow_mut: {}", exists); // prints "None"
+    println!("a_try_borrow_mut: {}", exists); // prints "Err"
 }
 ```
 

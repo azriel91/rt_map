@@ -7,7 +7,7 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use crate::{Cell, Entry, Ref, RefMut};
+use crate::{BorrowFail, Cell, Entry, Ref, RefMut};
 
 /// Map from `TypeId` to type.
 #[derive(Debug)]
@@ -19,15 +19,11 @@ impl<K, V> Default for RtMap<K, V> {
     }
 }
 
-macro_rules! fetch_panic {
+macro_rules! borrow_panic {
     ($key:ident) => {
         panic!(
-            "\
-            Tried to fetch value from the map, but the value does not exist.\n\
-            \n\
-            Key: `{key:?}`
-            ",
-            key = $key,
+            "Expected to borrow `{key:?}`, but it does not exist.",
+            key = $key
         )
     };
 }
@@ -203,22 +199,25 @@ where
                 inner: cell.borrow(),
                 phantom: PhantomData,
             })
-            .unwrap_or_else(|| fetch_panic!(k))
+            .unwrap_or_else(|| borrow_panic!(k))
     }
 
     /// Returns a reference to the value if it exists and is not mutably
     /// borrowed, `None` otherwise.
-    pub fn try_borrow<Q>(&self, k: &Q) -> Option<Ref<V>>
+    pub fn try_borrow<Q>(&self, k: &Q) -> Result<Ref<V>, BorrowFail>
     where
         Q: ?Sized + Hash + Eq,
         K: Borrow<Q>,
     {
-        self.0.get(k).and_then(|cell| {
-            cell.try_borrow().map(|cell_ref| Ref {
-                inner: cell_ref,
-                phantom: PhantomData,
+        self.0
+            .get(k)
+            .ok_or(BorrowFail::ValueNotFound)
+            .and_then(|cell| {
+                cell.try_borrow().map(|cell_ref| Ref {
+                    inner: cell_ref,
+                    phantom: PhantomData,
+                })
             })
-        })
     }
 
     /// Returns a reference to the value if it exists and is not borrowed,
@@ -239,21 +238,24 @@ where
                 inner: cell.borrow_mut(),
                 phantom: PhantomData,
             })
-            .unwrap_or_else(|| fetch_panic!(k))
+            .unwrap_or_else(|| borrow_panic!(k))
     }
 
     /// Returns a mutable reference to `R` if it exists, `None` otherwise.
-    pub fn try_borrow_mut<Q>(&self, k: &Q) -> Option<RefMut<V>>
+    pub fn try_borrow_mut<Q>(&self, k: &Q) -> Result<RefMut<V>, BorrowFail>
     where
         Q: ?Sized + Hash + Eq,
         K: Borrow<Q>,
     {
-        self.0.get(k).and_then(|r_cell| {
-            r_cell.try_borrow_mut().map(|cell_ref_mut| RefMut {
-                inner: cell_ref_mut,
-                phantom: PhantomData,
+        self.0
+            .get(k)
+            .ok_or(BorrowFail::ValueNotFound)
+            .and_then(|r_cell| {
+                r_cell.try_borrow_mut().map(|cell_ref_mut| RefMut {
+                    inner: cell_ref_mut,
+                    phantom: PhantomData,
+                })
             })
-        })
     }
 
     /// Retrieves a resource without fetching, which is cheaper, but only
@@ -303,6 +305,7 @@ impl<K, V> DerefMut for RtMap<K, V> {
 #[cfg(test)]
 mod tests {
     use super::RtMap;
+    use crate::BorrowFail;
 
     #[derive(Debug, Default, PartialEq)]
     struct Res;
@@ -433,32 +436,84 @@ mod tests {
     }
 
     #[test]
-    fn borrow_mut_try_borrow_returns_none() {
+    #[should_panic(expected = "Expected to borrow `'a'`, but it does not exist.")]
+    fn borrow_before_insert_panics() {
+        let rt_map = RtMap::<char, i32>::new();
+
+        rt_map.borrow(&'a');
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected to borrow `'a'`, but it does not exist.")]
+    fn borrow_mut_before_insert_panics() {
+        let rt_map = RtMap::<char, i32>::new();
+
+        rt_map.borrow_mut(&'a');
+    }
+
+    #[test]
+    fn borrow_mut_try_borrow_returns_borrow_conflict_imm() {
         let mut rt_map = RtMap::new();
         rt_map.insert('a', Res);
 
         let _res = rt_map.borrow_mut(&'a');
 
-        assert_eq!(None, rt_map.try_borrow(&'a'));
+        assert_eq!(Err(BorrowFail::BorrowConflictImm), rt_map.try_borrow(&'a'));
     }
 
     #[test]
-    fn borrow_try_borrow_mut_returns_none() {
+    fn borrow_try_borrow_mut_returns_borrow_conflict_mut() {
         let mut rt_map = RtMap::new();
         rt_map.insert('a', Res);
 
         let _res = rt_map.borrow(&'a');
 
-        assert_eq!(None, rt_map.try_borrow_mut(&'a'));
+        assert_eq!(
+            Err(BorrowFail::BorrowConflictMut),
+            rt_map.try_borrow_mut(&'a')
+        );
     }
 
     #[test]
-    fn borrow_mut_borrow_mut_returns_none() {
+    fn borrow_mut_borrow_mut_returns_borrow_conflict_mut() {
         let mut rt_map = RtMap::new();
         rt_map.insert('a', Res);
 
         let _res = rt_map.borrow_mut(&'a');
 
-        assert_eq!(None, rt_map.try_borrow_mut(&'a'));
+        assert_eq!(
+            Err(BorrowFail::BorrowConflictMut),
+            rt_map.try_borrow_mut(&'a')
+        );
+    }
+
+    #[test]
+    fn try_borrow_before_insert_returns_value_not_found() {
+        let rt_map = RtMap::<char, Res>::new();
+
+        assert_eq!(Err(BorrowFail::ValueNotFound), rt_map.try_borrow(&'a'));
+    }
+
+    #[test]
+    fn try_borrow_mut_before_insert_returns_value_not_found() {
+        let rt_map = RtMap::<char, Res>::new();
+
+        assert_eq!(Err(BorrowFail::ValueNotFound), rt_map.try_borrow_mut(&'a'));
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected to borrow `'a'`, but it does not exist.")]
+    fn borrow_before_insert_panics_value_not_found() {
+        let rt_map = RtMap::<char, Res>::new();
+
+        rt_map.borrow(&'a');
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected to borrow `'a'`, but it does not exist.")]
+    fn borrow_mut_before_insert_panics_value_not_found() {
+        let rt_map = RtMap::<char, Res>::new();
+
+        rt_map.borrow_mut(&'a');
     }
 }
