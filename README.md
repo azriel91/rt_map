@@ -5,11 +5,12 @@
 [![CI](https://github.com/azriel91/rt_map/workflows/CI/badge.svg)](https://github.com/azriel91/rt_map/actions/workflows/ci.yml)
 [![Coverage Status](https://codecov.io/gh/azriel91/rt_map/branch/main/graph/badge.svg)](https://codecov.io/gh/azriel91/rt_map)
 
-Runtime managed mutable borrowing from a map.
+Runtime managed mutable borrowing from a map or vec.
 
-This library provides a map that allows mutable borrows to different entries at the same time.
+This library provides a map and vec that allows mutable borrows to different entries at the same time.
 
-This implementation is extracted and slightly modified from [`shred`].
+The map implementation is extracted and slightly modified from [`shred`].
+
 
 ## Usage
 
@@ -17,9 +18,11 @@ Add the following to `Cargo.toml`
 
 ```toml
 rt_map = "0.5.0"
+rt_map = { version = "0.5.0", features = ["rt_vec"] } # to enable `RtVec`
 ```
 
-In code:
+
+### [`RtMap`]
 
 ```rust
 use rt_map::RtMap;
@@ -64,11 +67,57 @@ fn main() {
 }
 ```
 
+
+### [`RtVec`]
+
+```rust
+use rt_map::RtVec;
+
+struct A(u32);
+
+let mut rt_vec = RtVec::new();
+
+rt_vec.push(A(1));
+rt_vec.push(A(2));
+
+// We can validly have two mutable borrows from the `RtVec` map!
+let mut a = rt_vec.borrow_mut(0);
+let mut b = rt_vec.borrow_mut(1);
+a.0 = 2;
+b.0 = 3;
+
+// We need to explicitly drop the A and B borrows, because they are runtime
+// managed borrows, and rustc doesn't know to drop them before the immutable
+// borrows after this.
+drop(a);
+drop(b);
+
+// Multiple immutable borrows to the same value are valid.
+let a_0 = rt_vec.borrow(0);
+let _a_1 = rt_vec.borrow(0);
+let b = rt_vec.borrow(1);
+
+println!("A: {}", a_0.0);
+println!("B: {}", b.0);
+
+// Trying to mutably borrow a value that is already borrowed (immutably
+// or mutably) returns `Err`.
+let a_try_borrow_mut = rt_vec.try_borrow_mut(0);
+let exists = if a_try_borrow_mut.is_ok() {
+    "Ok(..)"
+} else {
+    "Err"
+};
+println!("a_try_borrow_mut: {}", exists); // prints "Err"
+```
+
+
 ## See Also
 
-* [`anymap`]: Map of any type, without multiple mutable borrows.
-* [`resman`]: Map of any type, with runtime managed borrowing.
-* [`shred`]: Like [`resman`], plus a task dispatcher.
+* [`anymap`]\: Map of any type, without multiple mutable borrows.
+* [`resman`]\: Map of any type, with runtime managed borrowing.
+* [`shred`]\: Like [`resman`], plus a task dispatcher.
+
 
 ## License
 
@@ -79,6 +128,7 @@ Licensed under either of
 
 at your option.
 
+
 ### Contribution
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
@@ -87,5 +137,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [`anymap`]: https://github.com/chris-morgan/anymap
 [`resman`]: https://github.com/azriel91/resman
 [`shred`]: https://github.com/amethyst/shred
+[`RtMap`]: https://docs.rs/rt_map/latest/rt_map/struct.RtMap.html
+[`RtVec`]: https://docs.rs/rt_map/latest/rt_map/struct.RtVec.html
 [LICENSE-APACHE]: LICENSE-APACHE
 [LICENSE-MIT]: LICENSE-MIT
