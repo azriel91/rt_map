@@ -16,3 +16,10 @@ features = ["rt_vec"]
 [features]
 default = []
 rt_vec = []
+
+[[example]]
+name = "rt_map"
+
+[[example]]
+name = "rt_vec"
+required-features = ["rt_vec"]
