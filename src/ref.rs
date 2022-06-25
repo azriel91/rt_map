@@ -33,7 +33,7 @@ where
     V: fmt::Debug + 'a,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let inner: &V = &*self;
+        let inner: &V = self;
         f.debug_struct("Ref").field("inner", inner).finish()
     }
 }
@@ -43,8 +43,8 @@ where
     V: PartialEq + 'a,
 {
     fn eq(&self, other: &Self) -> bool {
-        let r_self: &V = &*self;
-        let r_other: &V = &*other;
+        let r_self: &V = self;
+        let r_other: &V = other;
         r_self == r_other
     }
 }
