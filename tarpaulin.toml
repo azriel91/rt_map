@@ -1,5 +1,0 @@
-[default]
-
-[report]
-out = ["Html", "Xml"]
-output-dir = "target/tarpaulin"
