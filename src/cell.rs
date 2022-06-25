@@ -112,7 +112,7 @@ impl<T> Cell<T> {
         unsafe { &mut *self.inner.get() }
     }
 
-    /// Make sure we are allowed to aquire a read lock, and increment the read
+    /// Make sure we are allowed to acquire a read lock, and increment the read
     /// count by 1
     fn check_flag_read(&self) -> bool {
         loop {
@@ -132,7 +132,7 @@ impl<T> Cell<T> {
         }
     }
 
-    /// Make sure we are allowed to aquire a write lock, and then set the write
+    /// Make sure we are allowed to acquire a write lock, and then set the write
     /// lock flag.
     fn check_flag_write(&self) -> bool {
         self.flag

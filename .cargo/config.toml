@@ -1,0 +1,2 @@
+[alias]
+coverage = 'llvm-cov nextest --features rt_vec --open --output-dir ./target/coverage'

@@ -2,10 +2,24 @@
 name = "rt_map"
 version = "0.5.0"
 authors = ["Azriel Hoh <azriel91@gmail.com>"]
-edition = "2018"
-description = "Runtime managed mutable borrowing from a map."
+edition = "2021"
+description = "Runtime managed mutable borrowing from a map or vec."
 repository = "https://github.com/azriel91/rt_map"
 documentation = "https://docs.rs/rt_map/"
 readme = "README.md"
 keywords = ["map", "runtime", "borrow"]
 license = "MIT OR Apache-2.0"
+
+[package.metadata.docs.rs]
+features = ["rt_vec"]
+
+[features]
+default = []
+rt_vec = []
+
+[[example]]
+name = "rt_map"
+
+[[example]]
+name = "rt_vec"
+required-features = ["rt_vec"]
