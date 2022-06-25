@@ -382,7 +382,7 @@ mod tests {
     fn is_empty_returns_false_when_map_contains_items() {
         let mut rt_vec = RtVec::new();
 
-        rt_vec.insert(0, 0);
+        rt_vec.push(0);
 
         assert!(!rt_vec.is_empty());
     }
@@ -390,7 +390,7 @@ mod tests {
     #[test]
     fn get_mut_returns_mutable_reference_to_value() {
         let mut rt_vec = RtVec::new();
-        rt_vec.insert(0, Value(1));
+        rt_vec.push(Value(1));
 
         let value = rt_vec.get_mut(0);
 
@@ -409,7 +409,7 @@ mod tests {
     #[should_panic(expected = "but it was already borrowed")]
     fn read_write_fails() {
         let mut rt_vec = RtVec::new();
-        rt_vec.insert(0, Res);
+        rt_vec.push(Res);
 
         let _read = rt_vec.borrow(0);
         let _write = rt_vec.borrow_mut(0);
@@ -419,7 +419,7 @@ mod tests {
     #[should_panic(expected = "but it was already borrowed mutably")]
     fn write_read_fails() {
         let mut rt_vec = RtVec::new();
-        rt_vec.insert(0, Res);
+        rt_vec.push(Res);
 
         let _write = rt_vec.borrow_mut(0);
         let _read = rt_vec.borrow(0);
@@ -428,17 +428,29 @@ mod tests {
     #[test]
     fn remove_insert() {
         let mut rt_vec = RtVec::new();
-        rt_vec.insert(0, Res);
+        rt_vec.push(Res);
 
-        assert!(rt_vec.get(0).is_some());
+        assert_eq!(Res, *rt_vec.borrow(0));
 
         rt_vec.remove(0);
 
-        assert!(rt_vec.get(0).is_none());
+        assert_eq!(None, rt_vec.get(0));
 
-        rt_vec.insert(0, Res);
+        rt_vec.push(Res);
 
-        assert!(rt_vec.get(0).is_some());
+        assert_eq!(Res, *rt_vec.borrow(0));
+    }
+
+    #[test]
+    fn swap_remove() {
+        let mut rt_vec = RtVec::new();
+        rt_vec.push(0);
+        rt_vec.push(1);
+        rt_vec.push(2);
+
+        rt_vec.swap_remove(1);
+
+        assert_eq!(2, *rt_vec.borrow(1));
     }
 
     #[test]
@@ -460,7 +472,7 @@ mod tests {
     #[test]
     fn borrow_mut_try_borrow_returns_borrow_conflict_imm() {
         let mut rt_vec = RtVec::new();
-        rt_vec.insert(0, Res);
+        rt_vec.push(Res);
 
         let _res = rt_vec.borrow_mut(0);
 
@@ -470,7 +482,7 @@ mod tests {
     #[test]
     fn borrow_try_borrow_mut_returns_borrow_conflict_mut() {
         let mut rt_vec = RtVec::new();
-        rt_vec.insert(0, Res);
+        rt_vec.push(Res);
 
         let _res = rt_vec.borrow(0);
 
@@ -480,7 +492,7 @@ mod tests {
     #[test]
     fn borrow_mut_borrow_mut_returns_borrow_conflict_mut() {
         let mut rt_vec = RtVec::new();
-        rt_vec.insert(0, Res);
+        rt_vec.push(Res);
 
         let _res = rt_vec.borrow_mut(0);
 
