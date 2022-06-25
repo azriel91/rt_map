@@ -9,3 +9,7 @@ documentation = "https://docs.rs/rt_map/"
 readme = "README.md"
 keywords = ["map", "runtime", "borrow"]
 license = "MIT OR Apache-2.0"
+
+[features]
+default = []
+rt_vec = []

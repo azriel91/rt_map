@@ -79,3 +79,9 @@ mod entry;
 mod r#ref;
 mod ref_mut;
 mod rt_map;
+
+#[cfg(feature = "rt_vec")]
+pub use crate::rt_vec::RtVec;
+
+#[cfg(feature = "rt_vec")]
+mod rt_vec;
