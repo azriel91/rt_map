@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.1 (unreleased)
+## 0.5.1 (2022-06-25)
 
 * Add `RtVec` gated behind `"rt_vec"` feature. ([#1])
 

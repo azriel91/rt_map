@@ -17,8 +17,8 @@ The map implementation is extracted and slightly modified from [`shred`].
 Add the following to `Cargo.toml`
 
 ```toml
-rt_map = "0.5.0"
-rt_map = { version = "0.5.0", features = ["rt_vec"] } # to enable `RtVec`
+rt_map = "0.5.1"
+rt_map = { version = "0.5.1", features = ["rt_vec"] } # to enable `RtVec`
 ```
 
 

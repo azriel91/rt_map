@@ -5,13 +5,16 @@
 //!
 //! This implementation is extracted and slightly modified from [`shred`].
 //!
+//!
 //! ## Usage
 //!
 //! Add the following to `Cargo.toml`
 //!
 //! ```toml
-//! rt_map = "0.5.0"
+//! rt_map = "0.5.1"
+//! rt_map = { version = "0.5.1", features = ["rt_vec"] } # to enable `RtVec`
 //! ```
+//!
 //!
 //! ### [`RtMap`]
 //!
@@ -56,6 +59,7 @@
 //! println!("a_try_borrow_mut: {}", exists); // prints "Err"
 //! ```
 //!
+//!
 //! ### [`RtVec`]
 //!
 //! ```rust
@@ -98,6 +102,7 @@
 //! };
 //! println!("a_try_borrow_mut: {}", exists); // prints "Err"
 //! ```
+//!
 //!
 //! ## See Also
 //!
