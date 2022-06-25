@@ -287,11 +287,14 @@ impl<V> RtVec<V> {
     ///
     /// Returns `None` if `index` is out of bounds.
     ///
-    /// See [`borrow`] for a version of this that returns a `Result`
+    /// See [`try_borrow`] for a version of this that returns a `Result` with
+    /// the reason why the value is not returned.
     ///
     /// # Panics
     ///
     /// Panics if the value is already borrowed mutably.
+    ///
+    /// [`try_borrow`]: Self::try_borrow
     pub fn get(&self, index: usize) -> Option<Ref<V>> {
         self.0.get(index).map(|cell| Ref {
             inner: cell.borrow(),
