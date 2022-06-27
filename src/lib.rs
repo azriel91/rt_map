@@ -1,9 +1,9 @@
-//! Runtime managed mutable borrowing from a map or vec.
+//! Runtime managed mutable borrowing from a map.
 //!
-//! This library provides a map and vec that allows mutable borrows to different
-//! entries at the same time.
+//! This library provides a map that allows mutable borrows to different entries
+//! at the same time. For a map implementation of this, see [`rt_vec`].
 //!
-//! This implementation is extracted and slightly modified from [`shred`].
+//! The implementation is extracted and slightly modified from [`shred`].
 //!
 //!
 //! ## Usage
@@ -12,11 +12,9 @@
 //!
 //! ```toml
 //! rt_map = "0.5.1"
-//! rt_map = { version = "0.5.1", features = ["rt_vec"] } # to enable `RtVec`
 //! ```
 //!
-//!
-//! ### [`RtMap`]
+//! In code:
 //!
 //! ```rust
 //! use rt_map::RtMap;
@@ -60,50 +58,6 @@
 //! ```
 //!
 //!
-//! ### [`RtVec`]
-//!
-//! ```rust
-//! use rt_map::RtVec;
-//!
-//! struct A(u32);
-//!
-//! let mut rt_vec = RtVec::new();
-//!
-//! rt_vec.push(A(1));
-//! rt_vec.push(A(2));
-//!
-//! // We can validly have two mutable borrows from the `RtVec` map!
-//! let mut a = rt_vec.borrow_mut(0);
-//! let mut b = rt_vec.borrow_mut(1);
-//! a.0 = 2;
-//! b.0 = 3;
-//!
-//! // We need to explicitly drop the A and B borrows, because they are runtime
-//! // managed borrows, and rustc doesn't know to drop them before the immutable
-//! // borrows after this.
-//! drop(a);
-//! drop(b);
-//!
-//! // Multiple immutable borrows to the same value are valid.
-//! let a_0 = rt_vec.borrow(0);
-//! let _a_1 = rt_vec.borrow(0);
-//! let b = rt_vec.borrow(1);
-//!
-//! println!("A: {}", a_0.0);
-//! println!("B: {}", b.0);
-//!
-//! // Trying to mutably borrow a value that is already borrowed (immutably
-//! // or mutably) returns `Err`.
-//! let a_try_borrow_mut = rt_vec.try_borrow_mut(0);
-//! let exists = if a_try_borrow_mut.is_ok() {
-//!     "Ok(..)"
-//! } else {
-//!     "Err"
-//! };
-//! println!("a_try_borrow_mut: {}", exists); // prints "Err"
-//! ```
-//!
-//!
 //! ## See Also
 //!
 //! * [`anymap`]\: Map of any type, without multiple mutable borrows.
@@ -112,24 +66,13 @@
 //!
 //! [`anymap`]: https://github.com/chris-morgan/anymap
 //! [`resman`]: https://github.com/azriel91/resman
+//! [`rt_vec`]: https://crates.io/crates/rt_vec
 //! [`shred`]: https://github.com/amethyst/shred
 
-pub use crate::{
-    borrow_fail::BorrowFail, cell::Cell, cell_ref::CellRef, cell_ref_mut::CellRefMut, entry::Entry,
-    r#ref::Ref, ref_mut::RefMut, rt_map::RtMap,
-};
+// Re-exports
+pub use rt_ref::{BorrowFail, Cell, CellRef, CellRefMut, Ref, RefMut};
 
-mod borrow_fail;
-mod cell;
-mod cell_ref;
-mod cell_ref_mut;
+pub use crate::{entry::Entry, rt_map::RtMap};
+
 mod entry;
-mod r#ref;
-mod ref_mut;
 mod rt_map;
-
-#[cfg(feature = "rt_vec")]
-pub use crate::rt_vec::RtVec;
-
-#[cfg(feature = "rt_vec")]
-mod rt_vec;
