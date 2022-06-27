@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.2 (unreleased)
+
+* Remove `RtVec` -- split to the `rt_vec` crate. ([#2])
+
+[#2]: https://github.com/azriel91/rt_map/pull/2
+[`rt_vec`]: https://crates.io/crates/rt_vec
+
+
 ## 0.5.1 (2022-06-25)
 
 * Add `RtVec` gated behind `"rt_vec"` feature. ([#1])
