@@ -14,8 +14,8 @@ cargo install cargo-nextest
 ## Running Tests
 
 ```bash
-cargo test --features "rt_vec"
-cargo nextest run --features "rt_vec"
+cargo test
+cargo nextest run
 ```
 
 
@@ -24,23 +24,23 @@ cargo nextest run --features "rt_vec"
 Collect coverage and output as `html`.
 
 ```bash
-cargo llvm-cov --features rt_vec --open --output-dir ./target/coverage
+cargo llvm-cov --open --output-dir ./target/coverage
 
 # With `nextest`:
 # https://github.com/taiki-e/cargo-llvm-cov/issues/151
 cargo coverage
 # This is an alias defined in `.cargo/config.toml` to:
-cargo llvm-cov nextest --features rt_vec --open --output-dir ./target/coverage
+cargo llvm-cov nextest --open --output-dir ./target/coverage
 ```
 
 Collect coverage and output as `lcov`.
 
 ```bash
-cargo llvm-cov --features rt_vec --lcov --output-path ./target/coverage/lcov.info
+cargo llvm-cov --lcov --output-path ./target/coverage/lcov.info
 
 # With `nextest`:
 # https://github.com/taiki-e/cargo-llvm-cov/issues/151
-cargo llvm-cov nextest --features rt_vec --lcov --output-path ./target/coverage/lcov.info
+cargo llvm-cov nextest --lcov --output-path ./target/coverage/lcov.info
 ```
 
 

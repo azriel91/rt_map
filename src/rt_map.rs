@@ -3,11 +3,12 @@ use std::{
     collections::HashMap,
     fmt,
     hash::Hash,
-    marker::PhantomData,
     ops::{Deref, DerefMut},
 };
 
-use crate::{BorrowFail, Cell, Entry, Ref, RefMut};
+use rt_ref::{BorrowFail, Cell, Ref, RefMut};
+
+use crate::Entry;
 
 /// Map from `TypeId` to type.
 #[derive(Debug)]
@@ -195,10 +196,7 @@ where
     {
         self.0
             .get(k)
-            .map(|cell| Ref {
-                inner: cell.borrow(),
-                phantom: PhantomData,
-            })
+            .map(|cell| Ref::new(cell.borrow()))
             .unwrap_or_else(|| borrow_panic!(k))
     }
 
@@ -212,12 +210,7 @@ where
         self.0
             .get(k)
             .ok_or(BorrowFail::ValueNotFound)
-            .and_then(|cell| {
-                cell.try_borrow().map(|cell_ref| Ref {
-                    inner: cell_ref,
-                    phantom: PhantomData,
-                })
-            })
+            .and_then(|cell| cell.try_borrow().map(Ref::new))
     }
 
     /// Returns a reference to the value if it exists and is not borrowed,
@@ -234,10 +227,7 @@ where
     {
         self.0
             .get(k)
-            .map(|cell| RefMut {
-                inner: cell.borrow_mut(),
-                phantom: PhantomData,
-            })
+            .map(|cell| RefMut::new(cell.borrow_mut()))
             .unwrap_or_else(|| borrow_panic!(k))
     }
 
@@ -250,12 +240,7 @@ where
         self.0
             .get(k)
             .ok_or(BorrowFail::ValueNotFound)
-            .and_then(|r_cell| {
-                r_cell.try_borrow_mut().map(|cell_ref_mut| RefMut {
-                    inner: cell_ref_mut,
-                    phantom: PhantomData,
-                })
-            })
+            .and_then(|r_cell| r_cell.try_borrow_mut().map(RefMut::new))
     }
 
     /// Retrieves a resource without fetching, which is cheaper, but only
@@ -304,8 +289,9 @@ impl<K, V> DerefMut for RtMap<K, V> {
 
 #[cfg(test)]
 mod tests {
+    use rt_ref::BorrowFail;
+
     use super::RtMap;
-    use crate::BorrowFail;
 
     #[derive(Debug, Default, PartialEq)]
     struct Res;
