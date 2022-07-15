@@ -11,7 +11,8 @@
 //! Add the following to `Cargo.toml`
 //!
 //! ```toml
-//! rt_map = "0.5.1"
+//! rt_map = "0.5.1" # or
+//! rt_map = { version = "0.5.1", features = ["unsafe_debug"] }
 //! ```
 //!
 //! In code:
@@ -58,6 +59,13 @@
 //! ```
 //!
 //!
+//! ### Features
+//!
+//! #### `"unsafe_debug"`
+//!
+//! Enables the [`"unsafe_debug"`] feature of [`rt_ref`].
+//!
+//!
 //! ## See Also
 //!
 //! * [`anymap`]\: Map of any type, without multiple mutable borrows.
@@ -68,6 +76,7 @@
 //! [`resman`]: https://github.com/azriel91/resman
 //! [`rt_vec`]: https://crates.io/crates/rt_vec
 //! [`shred`]: https://github.com/amethyst/shred
+//! [`"unsafe_debug"`]: https://github.com/azriel91/rt_ref#unsafe_debug
 
 // Re-exports
 pub use rt_ref::{BorrowFail, Cell, CellRef, CellRefMut, Ref, RefMut};

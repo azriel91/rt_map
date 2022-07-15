@@ -17,9 +17,11 @@ The implementation is extracted and slightly modified from [`shred`].
 Add the following to `Cargo.toml`
 
 ```toml
-rt_map = "0.5.1"
+rt_map = "0.5.1" # or
+rt_map = { version = "0.5.1", features = ["unsafe_debug"] }
 ```
 
+In code:
 
 ```rust
 use rt_map::RtMap;
@@ -65,6 +67,13 @@ fn main() {
 ```
 
 
+### Features
+
+#### `"unsafe_debug"`
+
+Enables the [`"unsafe_debug"`] feature of [`rt_ref`].
+
+
 ## See Also
 
 * [`anymap`]\: Map of any type, without multiple mutable borrows.
@@ -90,6 +99,8 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [`anymap`]: https://github.com/chris-morgan/anymap
 [`resman`]: https://github.com/azriel91/resman
 [`rt_vec`]: https://crates.io/crates/rt_vec
+[`rt_ref`]: https://crates.io/crates/rt_ref
 [`shred`]: https://github.com/amethyst/shred
+[`"unsafe_debug"`]: https://github.com/azriel91/rt_ref#unsafe_debug
 [LICENSE-APACHE]: LICENSE-APACHE
 [LICENSE-MIT]: LICENSE-MIT
