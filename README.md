@@ -17,8 +17,8 @@ The implementation is extracted and slightly modified from [`shred`].
 Add the following to `Cargo.toml`
 
 ```toml
-rt_map = "0.5.1" # or
-rt_map = { version = "0.5.1", features = ["unsafe_debug"] }
+rt_map = "0.5.2" # or
+rt_map = { version = "0.5.2", features = ["unsafe_debug"] }
 ```
 
 In code:

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.2 (unreleased)
+## 0.5.2 (2022-07-15)
 
 * Remove `RtVec` -- split to the `rt_vec` crate. ([#2])
 * Add `"unsafe_debug"` passthrough feature. [#3]
