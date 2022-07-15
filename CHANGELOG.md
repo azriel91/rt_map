@@ -3,8 +3,10 @@
 ## 0.5.2 (unreleased)
 
 * Remove `RtVec` -- split to the `rt_vec` crate. ([#2])
+* Add `"unsafe_debug"` passthrough feature. [#3]
 
 [#2]: https://github.com/azriel91/rt_map/pull/2
+[#3]: https://github.com/azriel91/rt_map/pull/3
 [`rt_vec`]: https://crates.io/crates/rt_vec
 
 

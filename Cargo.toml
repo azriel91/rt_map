@@ -11,4 +11,7 @@ keywords = ["map", "runtime", "borrow"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-rt_ref = "0.1.0"
+rt_ref = "0.2.0"
+
+[features]
+unsafe_debug = ["rt_ref/unsafe_debug"]
