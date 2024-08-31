@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.3 (2024-08-31)
+
+* Update dependency versions.
+
+
 ## 0.5.2 (2022-07-15)
 
 * Remove `RtVec` -- split to the `rt_vec` crate. ([#2])

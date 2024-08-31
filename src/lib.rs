@@ -11,8 +11,8 @@
 //! Add the following to `Cargo.toml`
 //!
 //! ```toml
-//! rt_map = "0.5.2" # or
-//! rt_map = { version = "0.5.2", features = ["unsafe_debug"] }
+//! rt_map = "0.5.3" # or
+//! rt_map = { version = "0.5.3", features = ["unsafe_debug"] }
 //! ```
 //!
 //! In code:
