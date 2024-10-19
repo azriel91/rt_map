@@ -1,6 +1,6 @@
 # Changelog
 
-## unreleased
+## 0.5.4 (2024-10-19)
 
 * Add `RtMap::into_inner`.
 
