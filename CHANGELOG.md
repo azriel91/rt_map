@@ -1,5 +1,10 @@
 # Changelog
 
+## unreleased
+
+* Add `RtMap::into_inner`.
+
+
 ## 0.5.3 (2024-08-31)
 
 * Update dependency versions.
