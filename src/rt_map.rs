@@ -93,6 +93,11 @@ where
         self.0.capacity()
     }
 
+    /// Returns the underlying map.
+    pub fn into_inner(self) -> HashMap<K, Cell<V>> {
+        self.0
+    }
+
     /// Gets the given key’s corresponding entry in the map for in-place
     /// manipulation.
     pub fn entry(&mut self, k: K) -> Entry<'_, K, V> {
@@ -312,6 +317,15 @@ mod tests {
     fn with_capacity_reserves_enough_capacity() {
         let map: RtMap<i32, i32> = RtMap::with_capacity(100);
         assert!(map.capacity() >= 100);
+    }
+
+    #[test]
+    fn into_inner() {
+        let mut rt_map = RtMap::new();
+        rt_map.insert('a', Res);
+        let inner_map = rt_map.into_inner();
+
+        assert!(inner_map.contains_key(&'a'));
     }
 
     #[test]
