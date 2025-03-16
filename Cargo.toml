@@ -1,6 +1,6 @@
 [package]
 name = "rt_map"
-version = "0.5.4"
+version = "0.6.0"
 authors = ["Azriel Hoh <azriel91@gmail.com>"]
 edition = "2024"
 description = "Runtime managed mutable borrowing from a map."

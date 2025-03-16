@@ -1,6 +1,6 @@
 # Changelog
 
-## unreleased
+## 0.6.0 (2025-03-16)
 
 * Update crate to rust edition 2024.
 
