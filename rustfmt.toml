@@ -3,5 +3,5 @@ reorder_impl_items = true
 use_field_init_shorthand = true
 format_code_in_doc_comments = true
 wrap_comments = true
-edition = "2021"
-version = "Two"
+edition = "2024"
+style_edition = "2021"

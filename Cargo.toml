@@ -2,7 +2,7 @@
 name = "rt_map"
 version = "0.5.4"
 authors = ["Azriel Hoh <azriel91@gmail.com>"]
-edition = "2021"
+edition = "2024"
 description = "Runtime managed mutable borrowing from a map."
 repository = "https://github.com/azriel91/rt_map"
 documentation = "https://docs.rs/rt_map/"
