@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0 (2025-03-16)
+
+* Update crate to rust edition 2024.
+
+
 ## 0.5.4 (2024-10-19)
 
 * Add `RtMap::into_inner`.

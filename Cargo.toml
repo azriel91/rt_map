@@ -1,8 +1,8 @@
 [package]
 name = "rt_map"
-version = "0.5.4"
+version = "0.6.0"
 authors = ["Azriel Hoh <azriel91@gmail.com>"]
-edition = "2021"
+edition = "2024"
 description = "Runtime managed mutable borrowing from a map."
 repository = "https://github.com/azriel91/rt_map"
 documentation = "https://docs.rs/rt_map/"
@@ -11,7 +11,7 @@ keywords = ["map", "runtime", "borrow"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-rt_ref = "0.2.1"
+rt_ref = "0.3.0"
 
 [features]
 unsafe_debug = ["rt_ref/unsafe_debug"]
